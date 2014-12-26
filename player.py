@@ -43,3 +43,19 @@ class PassPlayer(Player):
         """
         if table.point is None:
             table.pass_bet(bet.Bet(table.minimum, self, table))
+
+
+class ComePlayer(PassPlayer):
+    """
+    This player always bets the Pass line and Come.
+    """
+    def make_bets(self, table):
+        """
+        Bet Come once a point is set.
+
+        :param table: table.Table
+        :return: None
+        """
+        super(ComePlayer, self).make_bets(table)
+        if table.point is not None:
+            table.come_bet(bet.Bet(table.minimum, self, table))

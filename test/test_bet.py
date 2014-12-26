@@ -20,3 +20,6 @@ class TestBet(unittest.TestCase):
         tbl = table.Table(minimum=10)
         nose.tools.assert_raises(bet.NotEnoughMoney, bet.Bet, 15, me, tbl)
         nose.tools.assert_raises(bet.MinimumBetRequired, bet.Bet, 5, me, tbl)
+
+        bt = bet.Bet(10, me, tbl)
+        nose.tools.assert_equal(me.money, 0)

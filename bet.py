@@ -30,6 +30,17 @@ class Bet(object):
         self.player = player
         self.table = table
 
+    def payout(self, odds):
+        """
+        Pay a winning bet at the given odds.
+
+        :param odds: odds tuple e.g., 7:6 = (7, 6)
+        :return: None
+        """
+        amount = self.amount
+        self.player.money += amount + ((odds[0] * amount) / odds[1])
+
+
 
 class NotEnoughMoney(Exception):
     """
