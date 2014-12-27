@@ -15,7 +15,8 @@ if __name__ == '__main__':
     results = [['Rolls', 'Money', 'Return']]
     for i in xrange(SIMULATIONS):
         tbl = table.Table()
-        me = player.ComePlayer(money=ANTE)
+        me = player.PlacePlayer(money=ANTE)
+        #print "money: %s" % me.money
         roll_count = 0
 
         #
@@ -23,9 +24,12 @@ if __name__ == '__main__':
         #
         while (roll_count < ROLLS) and (me.money >= tbl.minimum):
             me.make_bets(tbl)
+            #print tbl.bets
             tbl.shoot()
+            #print tbl.dice
             roll_count += 1
             tbl.pay_bets()
+            #print "money: %s" % me.money
 
         results.append([roll_count, me.money, me.money/ANTE])
 

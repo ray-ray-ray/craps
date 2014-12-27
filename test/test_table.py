@@ -9,6 +9,7 @@ import player
 import table
 import unittest
 
+
 class TestTable(unittest.TestCase):
     def test_point(self):
         tbl = table.Table()
@@ -131,3 +132,75 @@ class TestTable(unittest.TestCase):
         for point in tbl.bets['come']:
             nose.tools.assert_equal(len(tbl.bets['come'][point]), 0)
         nose.tools.assert_equal(me.money, 100)
+
+    def test_place(self):
+        #
+        # Can't place if no point
+        #
+        me = player.Player(money=100)
+        tbl = table.Table()
+        bt = bet.Bet(tbl.minimum, me, tbl)
+        nose.tools.assert_raises(table.NoPointSet, tbl.place_bet, 8, bt)
+
+        #
+        # Can't place if not an odds multiple
+        #
+        tbl.point = 4
+        nose.tools.assert_raises(table.FractionalOdds, tbl.place_bet, 8, bt)
+
+        #
+        # Give back bad bet money
+        #
+        me.money = 100
+
+        #
+        # Test loser
+        #
+        place_amount = tbl.minimum + (
+            table.ODDS['place'][8][1] - (
+                tbl.minimum % table.ODDS['place'][8][1]))
+        bt = bet.Bet(place_amount, me, tbl)
+        tbl.point = 4
+        tbl.place_bet(8, bt)
+        for point in tbl.bets['place']:
+            if point == 8:
+                nose.tools.assert_equal(len(tbl.bets['place'][point]), 1)
+            else:
+                nose.tools.assert_equal(len(tbl.bets['place'][point]), 0)
+        nose.tools.assert_equal(tbl.bets['place'][8][0], bt)
+        tbl.dice_total = 7
+        tbl.pay_bets()
+        for point in tbl.bets['place']:
+            nose.tools.assert_equal(len(tbl.bets['place'][point]), 0)
+        nose.tools.assert_equal(me.money, 100 - place_amount)
+
+        #
+        # Test winner
+        #
+        tbl.point = 4
+        tbl.place_bet(8, bet.Bet(place_amount, me, tbl))
+        tbl.dice_total = 8
+        tbl.pay_bets()
+        nose.tools.assert_equal(tbl.point, 4)
+        for point in tbl.bets['place']:
+            nose.tools.assert_equal(len(tbl.bets['place'][point]), 0)
+        nose.tools.assert_equal(
+            me.money,
+            100 - place_amount + (
+                place_amount * table.ODDS['place'][8][0] /
+                table.ODDS['place'][8][1]))
+
+        #
+        # Test place bet off when point off
+        #
+        tbl.point = 4
+        tbl.place_bet(8, bet.Bet(place_amount, me, tbl))
+        tbl.dice_total = 4
+        tbl.pay_bets()
+        nose.tools.assert_equal(len(tbl.bets['place'][8]), 1)
+        tbl.dice_total = 7
+        tbl.pay_bets()
+        nose.tools.assert_equal(len(tbl.bets['place'][8]), 1)
+        tbl.dice_total = 8
+        tbl.pay_bets()
+        nose.tools.assert_equal(len(tbl.bets['place'][8]), 1)

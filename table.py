@@ -9,7 +9,15 @@ CRAPS = (2, 3, 12)
 WINNERS = (7, 11)
 ODDS = {
     'pass': (1, 1),
-    'come': (1, 1)
+    'come': (1, 1),
+    'place': {
+        4: (9, 5),
+        5: (7, 5),
+        6: (7, 6),
+        8: (7, 6),
+        9: (7, 5),
+        10: (9, 5)
+    }
 }
 
 
@@ -30,6 +38,14 @@ class Table(object):
             'pass': [],
             'come': {
                 'out': [],
+                4: [],
+                5: [],
+                6: [],
+                8: [],
+                9: [],
+                10: []
+            },
+            'place': {
                 4: [],
                 5: [],
                 6: [],
@@ -135,12 +151,37 @@ class Table(object):
                 self.bets['come'][self.dice_total].append(bet)
             self.bets['come']['out'] = []
 
+    def place_check(self):
+        """
+        Check any place bets when a point is already set.
+
+        :return: None
+        """
+        if self.point is not None:
+            #
+            # 7 loses
+            #
+            if self.dice_total == 7:
+                for point in self.bets['place'].iterkeys():
+                    self.bets['place'][point] = []
+            #
+            # Payout winners
+            #
+            elif self.dice_total not in CRAPS + WINNERS:
+                for bet in self.bets['place'][self.dice_total]:
+                    bet.payout(ODDS['place'][self.dice_total])
+                self.bets['place'][self.dice_total] = []
+
     def pay_bets(self):
         """
         Update the table based on the recent roll and payout any winners.
 
         :return: None
         """
+        #
+        # Have to check place bets before pass so that the point isn't cleared.
+        #
+        self.place_check()
         self.pass_check()
         self.come_check()
 
@@ -164,9 +205,31 @@ class Table(object):
             raise NoPointSet
         self.bets['come']['out'].append(bet)
 
+    def place_bet(self, point, bet):
+        """
+        Make a place bet.
+
+        :param point: which number to place
+        :param bet: bet.Bet
+        :return: None
+        """
+        if self.point is None:
+            raise NoPointSet
+        if bet.amount % ODDS['place'][point][1] != 0:
+            raise FractionalOdds
+
+        self.bets['place'][point].append(bet)
+
 
 class NoPointSet(Exception):
     """
     Betting on something other than pass when there's no point set.
+    """
+    pass
+
+
+class FractionalOdds(Exception):
+    """
+    Place bet needs to be an odds multiple
     """
     pass
