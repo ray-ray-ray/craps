@@ -153,11 +153,12 @@ class OddsPlayer(ComePlayer):
             # Pass odds
             #
             if len(tbl.bets['odds'][tbl.point]) == 0:
-                if self.money >= tbl.minimum:
+                amount = odds_amount('odds', tbl, point=tbl.point)
+                if self.money >= amount:
                     tbl.odds_bet(
                         tbl.point,
                         bet.Bet(
-                            odds_amount('odds', tbl, point=tbl.point),
+                            amount,
                             self,
                             tbl))
             #
@@ -167,10 +168,11 @@ class OddsPlayer(ComePlayer):
                 if point != tbl.point:
                     if len(tbl.bets['come'][point]) != len(
                             tbl.bets['odds'][point]):
-                        if self.money >= tbl.minimum:
+                        amount = odds_amount('odds', tbl, point=point)
+                        if self.money >= amount:
                             tbl.odds_bet(
                                 point,
                                 bet.Bet(
-                                    odds_amount('odds', tbl, point=point),
-                                        self,
-                                        tbl))
+                                    amount,
+                                    self,
+                                    tbl))

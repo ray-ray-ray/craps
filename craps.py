@@ -22,8 +22,10 @@ if __name__ == '__main__':
         #
         # Main play loop
         #
-        while (roll_count < ROLLS) and (me.money >= tbl.minimum):
-            me.make_bets(tbl)
+        while tbl.bets_exist() or (
+                    (roll_count < ROLLS) and (me.money >= tbl.minimum)):
+            if roll_count < ROLLS:
+                me.make_bets(tbl)
             #print tbl.bets
             tbl.shoot()
             #print tbl.dice

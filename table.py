@@ -75,6 +75,21 @@ class Table(object):
         self.point = None
         self.minimum = minimum
 
+    def bets_exist(self):
+        """
+        Are there any bets currently on the table?
+
+        :return: true/false
+        """
+        for bet in self.bets.iterkeys():
+            if isinstance(self.bets[bet], dict):
+                for point in self.bets[bet].iterkeys():
+                    if len(self.bets[bet][point]) > 0:
+                        return True
+            elif len(self.bets[bet]) > 0:
+                return True
+        return False
+
     def shoot(self):
         """
         Roll the dice.

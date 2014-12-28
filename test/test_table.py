@@ -320,3 +320,23 @@ class TestTable(unittest.TestCase):
         for point in tbl.bets['odds']:
             nose.tools.assert_equal(len(tbl.bets['odds'][point]), 0)
         nose.tools.assert_equal(me.money, 100 - (4 * tbl.minimum))
+
+    def test_bets_exist(self):
+        me = player.Player(money=100)
+        tbl = table.Table()
+        nose.tools.assert_false(tbl.bets_exist())
+        tbl.pass_bet(bet.Bet(tbl.minimum, me, tbl))
+        nose.tools.assert_true(tbl.bets_exist())
+        tbl.dice_total = 6
+        tbl.pay_bets()
+        nose.tools.assert_true(tbl.bets_exist())
+        tbl.place_bet(8, bet.Bet(tbl.minimum + 3, me, tbl))
+        nose.tools.assert_true(tbl.bets_exist())
+        tbl.dice_total = 6
+        tbl.pay_bets()
+        nose.tools.assert_true(tbl.bets_exist())
+        tbl.pay_bets()
+        nose.tools.assert_true(tbl.bets_exist())
+        tbl.dice_total = 7
+        tbl.pay_bets()
+        nose.tools.assert_false(tbl.bets_exist())
