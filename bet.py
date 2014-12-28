@@ -41,7 +41,6 @@ class Bet(object):
         self.player.money += amount + ((odds[0] * amount) / odds[1])
 
 
-
 class NotEnoughMoney(Exception):
     """
     Can't bet more than you have

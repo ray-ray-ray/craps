@@ -7,6 +7,26 @@ import bet
 import table
 
 
+def odds_amount(bet_name, tbl, point=None):
+    """
+    Determine minimum bet to get full odds payout.
+
+    :param bet_name: e.g., pass, come, place
+    :param tbl: table.Table
+    :param point: point for place, odds, etc.
+    :return: bet amount
+    """
+    if point is None:
+        odds = table.ODDS[bet_name]
+    else:
+        odds = table.ODDS[bet_name][point]
+
+    if tbl.minimum % odds[1] == 0:
+        return tbl.minimum
+
+    return tbl.minimum + (odds[1] - (tbl.minimum % odds[1]))
+
+
 class Player(object):
     """
     Player tracks money and has a betting strategy.
@@ -82,8 +102,7 @@ class PlacePlayer(Player):
         #
         # Minimum place bet based on the 6 odds
         #
-        place_amount = tbl.minimum + table.ODDS['place'][6][1] - (
-            tbl.minimum % table.ODDS['place'][6][1])
+        place_amount = odds_amount('place', tbl, point=6)
 
         #
         # If the point was on for the last roll, update the state of the bets.
@@ -113,3 +132,45 @@ class PlacePlayer(Player):
             if not self.eight and (self.money >= place_amount):
                 tbl.place_bet(8, bet.Bet(place_amount, self, tbl))
                 self.eight = True
+
+
+class OddsPlayer(ComePlayer):
+    """
+    Player makes all pass and come bets and makes odds bets on all points.
+    """
+    def make_bets(self, tbl):
+        """
+        Bet odds whenever possible.
+
+        :param tbl: table.Table
+        :return: None
+        """
+        if self.money >= tbl.minimum:
+            super(OddsPlayer, self).make_bets(tbl)
+
+        if tbl.point is not None:
+            #
+            # Pass odds
+            #
+            if len(tbl.bets['odds'][tbl.point]) == 0:
+                if self.money >= tbl.minimum:
+                    tbl.odds_bet(
+                        tbl.point,
+                        bet.Bet(
+                            odds_amount('odds', tbl, point=tbl.point),
+                            self,
+                            tbl))
+            #
+            # Come odds
+            #
+            for point in tbl.bets['odds'].iterkeys():
+                if point != tbl.point:
+                    if len(tbl.bets['come'][point]) != len(
+                            tbl.bets['odds'][point]):
+                        if self.money >= tbl.minimum:
+                            tbl.odds_bet(
+                                point,
+                                bet.Bet(
+                                    odds_amount('odds', tbl, point=point),
+                                        self,
+                                        tbl))

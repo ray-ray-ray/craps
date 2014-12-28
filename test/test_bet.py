@@ -21,5 +21,12 @@ class TestBet(unittest.TestCase):
         nose.tools.assert_raises(bet.NotEnoughMoney, bet.Bet, 15, me, tbl)
         nose.tools.assert_raises(bet.MinimumBetRequired, bet.Bet, 5, me, tbl)
 
-        bt = bet.Bet(10, me, tbl)
+        bet.Bet(10, me, tbl)
         nose.tools.assert_equal(me.money, 0)
+
+    def test_payout(self):
+        me = player.Player(money=15)
+        tbl = table.Table()
+        bt = bet.Bet(tbl.minimum, me, tbl)
+        bt.payout(table.ODDS['odds'][6])
+        nose.tools.assert_equal(me.money, 33)

@@ -15,7 +15,7 @@ if __name__ == '__main__':
     results = [['Rolls', 'Money', 'Return']]
     for i in xrange(SIMULATIONS):
         tbl = table.Table()
-        me = player.PlacePlayer(money=ANTE)
+        me = player.OddsPlayer(money=ANTE)
         #print "money: %s" % me.money
         roll_count = 0
 

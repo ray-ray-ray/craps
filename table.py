@@ -17,6 +17,14 @@ ODDS = {
         8: (7, 6),
         9: (7, 5),
         10: (9, 5)
+    },
+    'odds': {
+        4: (2, 1),
+        5: (3, 2),
+        6: (6, 5),
+        8: (6, 5),
+        9: (3, 2),
+        10: (2, 1)
     }
 }
 
@@ -52,6 +60,14 @@ class Table(object):
                 8: [],
                 9: [],
                 10: []
+            },
+            'odds': {
+                4: [],
+                5: [],
+                6: [],
+                8: [],
+                9: [],
+                10: []
             }
         }
         self.dice = (None, None)
@@ -70,7 +86,7 @@ class Table(object):
 
     def pass_check(self):
         """
-        Check any pass bets against the current roll.
+        Check any pass and odds bets against the current roll.
 
         :return: None
         """
@@ -98,6 +114,8 @@ class Table(object):
                 # Lose on the pass line.
                 #
                 self.bets['pass'] = []
+                for point in self.bets['odds'].iterkeys():
+                    self.bets['odds'][point] = []
                 self.point = None
             elif self.dice_total == self.point:
                 #
@@ -105,12 +123,15 @@ class Table(object):
                 #
                 for bet in self.bets['pass']:
                     bet.payout(ODDS['pass'])
-                self.point = None
+                for bet in self.bets['odds'][self.point]:
+                    bet.payout(ODDS['odds'][self.point])
                 self.bets['pass'] = []
+                self.bets['odds'][self.point] = []
+                self.point = None
 
     def come_check(self):
         """
-        Check any Come bets against the current roll
+        Check any Come and associated odds bets against the current roll
         :return:
         """
         if self.dice_total in CRAPS:
@@ -131,6 +152,8 @@ class Table(object):
                 #
                 for point in self.bets['come'].iterkeys():
                     self.bets['come'][point] = []
+                for point in self.bets['odds'].iterkeys():
+                    self.bets['odds'][point] = []
             else:
                 #
                 # Clear the come out bets.
@@ -140,13 +163,19 @@ class Table(object):
             #
             # Come point winners.
             #
-            for bet in self.bets['come'][self.dice_total]:
+            for bet in (self.bets['come'][self.dice_total]):
                 bet.payout(ODDS['come'])
+            #
+            # Odds point winners
+            #
+            for bet in (self.bets['odds'][self.dice_total]):
+                bet.payout(ODDS['odds'][self.dice_total])
 
             #
             # Set come out points.
             #
             self.bets['come'][self.dice_total] = []
+            self.bets['odds'][self.dice_total] = []
             for bet in self.bets['come']['out']:
                 self.bets['come'][self.dice_total].append(bet)
             self.bets['come']['out'] = []
@@ -202,8 +231,25 @@ class Table(object):
         :return: None
         """
         if self.point is None:
-            raise NoPointSet
+            raise PointNotSet
         self.bets['come']['out'].append(bet)
+
+    def odds_bet(self, point, bet):
+        """
+        Make an odds bet on an existing Pass or Come bet.
+
+        :param point: the existing Pass or Come point
+        :param bet: bet.Bet
+        :return: None
+        """
+        if point in CRAPS + WINNERS:
+            raise InvalidPoint
+        if (point != self.point) and (len(self.bets['come'][point]) == 0):
+            raise PointNotSet
+        if bet.amount % ODDS['odds'][point][1] != 0:
+            raise FractionalOdds
+
+        self.bets['odds'][point].append(bet)
 
     def place_bet(self, point, bet):
         """
@@ -214,16 +260,25 @@ class Table(object):
         :return: None
         """
         if self.point is None:
-            raise NoPointSet
+            raise PointNotSet
+        if point in CRAPS + WINNERS:
+            raise InvalidPoint
         if bet.amount % ODDS['place'][point][1] != 0:
             raise FractionalOdds
 
         self.bets['place'][point].append(bet)
 
 
-class NoPointSet(Exception):
+class PointNotSet(Exception):
     """
     Betting on something other than pass when there's no point set.
+    """
+    pass
+
+
+class InvalidPoint(Exception):
+    """
+    Betting on a number that's not a valid point.
     """
     pass
 
