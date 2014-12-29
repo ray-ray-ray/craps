@@ -30,6 +30,9 @@ class Bet(object):
         self.player = player
         self.table = table
 
+    def __str__(self):
+        return '<bet amount=%s>' % self.amount
+
     def payout(self, odds):
         """
         Pay a winning bet at the given odds.
