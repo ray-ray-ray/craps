@@ -99,6 +99,47 @@ class Table(object):
         self.dice = (random.choice(self.die), random.choice(self.die))
         self.dice_total = sum(self.dice)
 
+    def payout(self, bet_type, point=None):
+        """
+        Pay winning bets.
+
+        :param bet_type: come, pass, place, etc.
+        :param point: out or the number
+        :return: None
+        """
+        if point is None:
+            bets = self.bets[bet_type]
+            odds = ODDS[bet_type]
+        else:
+            bets = self.bets[bet_type][point]
+
+            #
+            # Come bet has a point, but even odds.
+            #
+            if bet_type == 'come':
+                odds = ODDS[bet_type]
+            else:
+                odds = ODDS[bet_type][point]
+
+        [bets.pop().payout(odds) for _ in xrange(len(bets))]
+
+    def clear_bets(self, bet_type, point=None):
+        """
+        Remove losing bets.
+
+        :param bet_type: come, place, pass, etc.
+        :param point: out or the number
+        :return: None
+        """
+        if point is None:
+            if isinstance(self.bets[bet_type], dict):
+                for pnt in self.bets[bet_type].iterkeys():
+                    self.bets[bet_type][pnt] = []
+            else:
+                self.bets[bet_type] = []
+        else:
+            self.bets[bet_type][point] = []
+
     def pass_check(self):
         """
         Check any pass and odds bets against the current roll.
@@ -110,14 +151,12 @@ class Table(object):
                 #
                 # No point. Craps. Lose on the pass line.
                 #
-                self.bets['pass'] = []
+                self.clear_bets('pass')
             elif self.dice_total in WINNERS:
                 #
                 # No point. Winners on the pass line.
                 #
-                for bet in self.bets['pass']:
-                    bet.payout(ODDS['pass'])
-                self.bets['pass'] = []
+                self.payout('pass')
             else:
                 #
                 # Set the point.
@@ -128,20 +167,15 @@ class Table(object):
                 #
                 # Lose on the pass line.
                 #
-                self.bets['pass'] = []
-                for point in self.bets['odds'].iterkeys():
-                    self.bets['odds'][point] = []
+                self.clear_bets('pass')
+                self.clear_bets('odds')
                 self.point = None
             elif self.dice_total == self.point:
                 #
                 # Win on the pass line.
                 #
-                for bet in self.bets['pass']:
-                    bet.payout(ODDS['pass'])
-                for bet in self.bets['odds'][self.point]:
-                    bet.payout(ODDS['odds'][self.point])
-                self.bets['pass'] = []
-                self.bets['odds'][self.point] = []
+                self.payout('pass')
+                self.payout('odds', self.point)
                 self.point = None
 
     def come_check(self):
@@ -153,47 +187,36 @@ class Table(object):
             #
             # Come out lose
             #
-            self.bets['come']['out'] = []
+            self.clear_bets('come', point='out')
         elif self.dice_total in WINNERS:
             #
             # Come out win.
             #
-            for bet in self.bets['come']['out']:
-                bet.payout(ODDS['come'])
+            self.payout('come', point='out')
 
             if self.dice_total == 7:
                 #
                 # Everyone else loses.
                 #
-                for point in self.bets['come'].iterkeys():
-                    self.bets['come'][point] = []
-                for point in self.bets['odds'].iterkeys():
-                    self.bets['odds'][point] = []
-            else:
-                #
-                # Clear the come out bets.
-                #
-                self.bets['come']['out'] = []
+                self.clear_bets('come')
+                self.clear_bets('odds')
         else:
             #
             # Come point winners.
             #
-            for bet in (self.bets['come'][self.dice_total]):
-                bet.payout(ODDS['come'])
+            self.payout('come', point=self.dice_total)
+
             #
             # Odds point winners
             #
-            for bet in (self.bets['odds'][self.dice_total]):
-                bet.payout(ODDS['odds'][self.dice_total])
+            self.payout('odds', point=self.dice_total)
 
             #
             # Set come out points.
             #
-            self.bets['come'][self.dice_total] = []
-            self.bets['odds'][self.dice_total] = []
             for bet in self.bets['come']['out']:
                 self.bets['come'][self.dice_total].append(bet)
-            self.bets['come']['out'] = []
+            self.clear_bets('come', point='out')
 
     def place_check(self):
         """
@@ -206,15 +229,12 @@ class Table(object):
             # 7 loses
             #
             if self.dice_total == 7:
-                for point in self.bets['place'].iterkeys():
-                    self.bets['place'][point] = []
+                self.clear_bets('place')
             #
             # Payout winners
             #
             elif self.dice_total not in CRAPS + WINNERS:
-                for bet in self.bets['place'][self.dice_total]:
-                    bet.payout(ODDS['place'][self.dice_total])
-                self.bets['place'][self.dice_total] = []
+                self.payout('place', point=self.dice_total)
 
     def pay_bets(self):
         """
